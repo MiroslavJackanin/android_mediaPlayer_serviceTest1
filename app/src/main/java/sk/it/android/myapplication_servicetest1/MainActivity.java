@@ -1,6 +1,8 @@
 package sk.it.android.myapplication_servicetest1;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -10,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
@@ -19,6 +22,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
@@ -30,6 +34,7 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.ArrayList;
 
 import sk.it.android.myapplication_servicetest1.service.MyService;
+import sk.it.android.myapplication_servicetest1.util.CreateNotification;
 import sk.it.android.myapplication_servicetest1.util.MyAdapter;
 import sk.it.android.myapplication_servicetest1.util.Song;
 
@@ -89,6 +94,7 @@ public class MainActivity extends AppCompatActivity implements MyAdapter.OnItemL
     }
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyService.LocalBinder localBinder = (MyService.LocalBinder) service;

@@ -1,10 +1,13 @@
 package sk.it.android.myapplication_servicetest1;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -13,12 +16,14 @@ import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
 import sk.it.android.myapplication_servicetest1.service.MyService;
+import sk.it.android.myapplication_servicetest1.util.CreateNotification;
 import sk.it.android.myapplication_servicetest1.util.Song;
 
 public class PlayerActivity extends AppCompatActivity {
@@ -43,6 +48,8 @@ public class PlayerActivity extends AppCompatActivity {
 
     Intent intent;
 
+    NotificationManager notificationManager;
+
     // TODO save images with intentJobService to folder
     // TODO sorting/grouping/filtering main activity recyclerView
     // TODO when sorting
@@ -59,6 +66,7 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyService.LocalBinder localBinder = (MyService.LocalBinder) service;
@@ -80,6 +88,9 @@ public class PlayerActivity extends AppCompatActivity {
             }, 0, 100);
 
             scoutProgress.start();
+
+            createChannel();
+            startNotification();
         }
 
         @Override
@@ -87,6 +98,19 @@ public class PlayerActivity extends AppCompatActivity {
             isBound = false;
         }
     };
+
+    private void startNotification() {
+        CreateNotification.createNotification(PlayerActivity.this, song, R.drawable.play);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void createChannel() {
+        NotificationChannel channel = new NotificationChannel(CreateNotification.CHANNEL_ID, "myChannel", NotificationManager.IMPORTANCE_LOW);
+        notificationManager = getSystemService(NotificationManager.class);
+        if (notificationManager != null) {
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
 
     Thread scoutProgress = new Thread(new Runnable() {
         public void run() {
