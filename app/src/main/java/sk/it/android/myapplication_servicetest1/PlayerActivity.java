@@ -1,20 +1,19 @@
 package sk.it.android.myapplication_servicetest1;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,6 +26,7 @@ public class PlayerActivity extends AppCompatActivity {
     MyService myService;
     boolean isBound = false;
     AudioManager audioManager;
+    Handler handler;
 
     Song song;
 
@@ -47,6 +47,7 @@ public class PlayerActivity extends AppCompatActivity {
     // TODO sorting/grouping/filtering main activity recyclerView
     // TODO when sorting
     // TODO playLists cards on top -> move to playlist and back to main (swipe left or right) menu button in top left actionBar opens side pane for some settings, long click on item in recycler view adds item to playlist (prompt confirm)
+    // TODO next and previous song buttons
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +64,7 @@ public class PlayerActivity extends AppCompatActivity {
             MyService.LocalBinder localBinder = (MyService.LocalBinder) service;
             myService = localBinder.getService();
             isBound = true;
+            handler = new Handler();
 
             playBtnInit();
             intentInit();
@@ -70,14 +72,14 @@ public class PlayerActivity extends AppCompatActivity {
             timeSeekBarInit();
             volumeSeekBarInit();
 
-            elapsedTimeLabel = findViewById(R.id.elapsedTimeLabel);
             new Timer().scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
                     timeSeekBar.setProgress(myService.getCurrentPosition());
-                    //elapsedTimeLabel.setText(myService.getCurrentPositionReadable());
                 }
-            }, 0, 1000);
+            }, 0, 100);
+
+            scoutProgress.start();
         }
 
         @Override
@@ -85,6 +87,19 @@ public class PlayerActivity extends AppCompatActivity {
             isBound = false;
         }
     };
+
+    Thread scoutProgress = new Thread(new Runnable() {
+        public void run() {
+            while (true) {
+                handler.post(() -> elapsedTimeLabel.setText(myService.getCurrentPositionReadable()));
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    });
 
     private void intentInit() {
         Intent intent = getIntent();
@@ -103,6 +118,7 @@ public class PlayerActivity extends AppCompatActivity {
         albumTextView.setText(song.getAlbum());
         artistTextView.setText(song.getArtist());
 
+        elapsedTimeLabel = findViewById(R.id.elapsedTimeLabel);
         remainingTimeLabel = findViewById(R.id.remainingTimeLabel);
         remainingTimeLabel.setText(song.getDurationReadable());
     }
