@@ -1,8 +1,6 @@
 package sk.it.android.myapplication_servicetest1;
 
 import android.Manifest;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -12,17 +10,14 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
@@ -94,7 +89,6 @@ public class MainActivity extends AppCompatActivity implements MyAdapter.OnItemL
     }
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
-        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyService.LocalBinder localBinder = (MyService.LocalBinder) service;
@@ -168,6 +162,8 @@ public class MainActivity extends AppCompatActivity implements MyAdapter.OnItemL
 
         initCurrentPlayingLayout(song);
         currentPlayingLayout.setVisibility(View.VISIBLE);
+
+        CreateNotification.createNotification(this, song, R.drawable.ic_stop);
     }
 
     private void initCurrentPlayingLayout(Song song) {

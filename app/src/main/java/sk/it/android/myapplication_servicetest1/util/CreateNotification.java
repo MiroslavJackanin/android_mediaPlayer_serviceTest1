@@ -1,35 +1,45 @@
 package sk.it.android.myapplication_servicetest1.util;
 
-import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.v4.media.session.MediaSessionCompat;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import sk.it.android.myapplication_servicetest1.MainActivity;
 import sk.it.android.myapplication_servicetest1.R;
+import sk.it.android.myapplication_servicetest1.service.NotificationReceiver;
 
 public class CreateNotification {
-    public static final String CHANNEL_ID = "channel";
 
-    public static final String ACTION_PLAY = "actionPlay";
+    public static void createNotification(Context context, Song song, int drawable) {
+        Bitmap myImg = BitmapFactory.decodeResource(context.getResources(), R.drawable.image);
 
-    public static Notification notification;
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.putExtra("song", song);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 
-    public static void createNotification(Context context, Song song, int playButton) {
-        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
-        MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context, "tag");
+        Intent actionIntent = new Intent(context.getApplicationContext(), NotificationReceiver.class);
+        actionIntent.setAction("PLAY");
+        actionIntent.putExtra("song", song);
+        PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 3, actionIntent, 0);
+        NotificationCompat.Action action = new NotificationCompat.Action.Builder(drawable, "Play", actionPendingIntent).build();
 
-        notification = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.baseline_music_note_black_24dp)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "channel1")
+                .setSmallIcon(R.drawable.ic_music_note)
                 .setContentTitle(song.getTitle())
-                .setContentText(song.getArtist())
-                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.image))
-                .setOnlyAlertOnce(true)
-                .setShowWhen(false)
+                .setContentText(song.getAlbum())
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build();
-        notificationManagerCompat.notify(1, notification);
+                .setContentIntent(pendingIntent)
+                .addAction(action)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setShowActionsInCompactView(0))
+                .setLargeIcon(myImg);
+        NotificationManagerCompat manager = NotificationManagerCompat.from(context);
+        manager.notify(1, builder.build());
     }
 }

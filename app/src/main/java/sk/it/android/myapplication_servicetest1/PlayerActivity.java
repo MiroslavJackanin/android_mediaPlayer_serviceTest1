@@ -1,23 +1,27 @@
 package sk.it.android.myapplication_servicetest1;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -48,13 +52,12 @@ public class PlayerActivity extends AppCompatActivity {
 
     Intent intent;
 
-    NotificationManager notificationManager;
-
     // TODO save images with intentJobService to folder
     // TODO sorting/grouping/filtering main activity recyclerView
     // TODO when sorting
     // TODO playLists cards on top -> move to playlist and back to main (swipe left or right) menu button in top left actionBar opens side pane for some settings, long click on item in recycler view adds item to playlist (prompt confirm)
     // TODO next and previous song buttons
+    // TODO widget
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +69,6 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
-        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyService.LocalBinder localBinder = (MyService.LocalBinder) service;
@@ -89,8 +91,7 @@ public class PlayerActivity extends AppCompatActivity {
 
             scoutProgress.start();
 
-            createChannel();
-            startNotification();
+            registerReceiver(broadcastReceiver, new IntentFilter("NOTIFICATION_ACTION"));
         }
 
         @Override
@@ -99,28 +100,26 @@ public class PlayerActivity extends AppCompatActivity {
         }
     };
 
-    private void startNotification() {
-        CreateNotification.createNotification(PlayerActivity.this, song, R.drawable.play);
-    }
+    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getExtras().getString("ACTION");
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private void createChannel() {
-        NotificationChannel channel = new NotificationChannel(CreateNotification.CHANNEL_ID, "myChannel", NotificationManager.IMPORTANCE_LOW);
-        notificationManager = getSystemService(NotificationManager.class);
-        if (notificationManager != null) {
-            notificationManager.createNotificationChannel(channel);
+            if (action.equals("PLAY")) {
+                if (myService.isPlaying()) {
+                    actionPause();
+                } else {
+                    actionResume();
+                }
+            }
         }
-    }
+    };
 
     Thread scoutProgress = new Thread(new Runnable() {
         public void run() {
             while (true) {
                 handler.post(() -> elapsedTimeLabel.setText(myService.getCurrentPositionReadable()));
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                SystemClock.sleep(1000);
             }
         }
     });
@@ -130,6 +129,7 @@ public class PlayerActivity extends AppCompatActivity {
         if (intent == null) {
             return;
         }
+
         song = intent.getParcelableExtra("song");
 
         titleTextView = findViewById(R.id.title);
@@ -217,11 +217,17 @@ public class PlayerActivity extends AppCompatActivity {
         intent = new Intent(this, MyService.class);
         intent.setAction("PAUSE");
         startService(intent);
+
+        playBtn.setBackgroundResource(R.drawable.play);
+        CreateNotification.createNotification(this, song, R.drawable.ic_play);
     }
     private void actionResume() {
         intent = new Intent(this, MyService.class);
         intent.setAction("RESUME");
         startService(intent);
+
+        CreateNotification.createNotification(this, song, R.drawable.ic_stop);
+        playBtn.setBackgroundResource(R.drawable.stop);
     }
     private void actionSeekTimeTo(int progress) {
         intent = new Intent(this, MyService.class);
